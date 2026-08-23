@@ -3,7 +3,9 @@ from typing import AsyncGenerator, List, Dict, Any
 
 from fastapi import FastAPI, Query
 from .documents import load_documents
+from .llm import generate_answer
 from .retriever import naive_retriever
+from pydantic import BaseModel
 
 # In-memory document store (for now)
 DOCUMENTS: List[Dict[str, Any]] = []
@@ -19,6 +21,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("Shutting down...")
 
 app = FastAPI(title = "Simple RAG Service", lifespan=lifespan)
+
+class ChatRequest(BaseModel):
+    message: str
+    top_k: int = 5
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    retrieved: List[Dict[str, Any]]
 
 
 @app.get("/health")
@@ -40,3 +51,11 @@ def retrieve(
         "top_k": top_k,
         "results": results,
     }
+
+@app.post("/chat", response_model=ChatResponse)
+def chat(req: ChatRequest):
+    # Retrieve relevant docs
+    retrieved = naive_retriever(req.message, DOCUMENTS, top_k=req.top_k)
+    # Generate answer using Groq
+    answer = generate_answer(req.message, retrieved)
+    return ChatResponse(answer=answer, retrieved=retrieved)

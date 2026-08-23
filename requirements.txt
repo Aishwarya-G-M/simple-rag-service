@@ -5,3 +5,4 @@ faiss-cpu
 pydantic
 python-multipart
 pandas
+groq
