@@ -1,16 +1,65 @@
-## How it works (current version)
+# Simple RAG Service
 
-This service implements a minimal end‑to‑end RAG pipeline over an SMS spam corpus:
+A learning-oriented Retrieval-Augmented Generation (RAG) service for analyzing SMS spam messages.
 
-- **Data**: Loads a CSV of labeled SMS messages (`ham`/`spam`) into memory at startup.
-- **Retrieval (naive)**: For a given query, it performs simple word‑overlap retrieval:
-  - Splits the query into words.
-  - For each SMS, counts how many query words appear in the message text.
-  - Returns the top‑k messages with the highest overlap score.
-- **Generation**: Sends the retrieved messages plus the user’s question to a Groq LLM with a fraud‑analysis prompt, and returns the model’s grounded answer.
+## Version 1
 
-Endpoints:
-- `GET /retrieve?query=<text>&top_k=<int>` – returns top‑k relevant SMS messages.
-- `POST /chat` – RAG endpoint: retrieves context, calls Groq, returns `{answer, retrieved}`.
+This is an initial RAG prototype built with Python, FastAPI, and Groq.
 
-This is a prototype RAG system; the next step is to replace the naive retrieval with embeddings + FAISS for semantic search.
+### What it does
+
+1. Loads an SMS spam CSV dataset into memory at service startup.
+2. Exposes `GET /retrieve`, which finds relevant messages using naive word-overlap scoring.
+3. Exposes `POST /chat`, which:
+   - Retrieves the top-k matching SMS messages.
+   - Adds them as context to an LLM prompt.
+   - Calls Groq to generate a grounded response.
+   - Returns the answer and the retrieved messages.
+
+## Retrieval limitation
+
+The current retriever loops through every SMS message and scores it by the number of query words found in its text. It depends on exact word overlap and does not capture semantic similarity.
+
+This is intentional: it establishes a simple, inspectable baseline before adding embeddings and FAISS-based vector search.
+
+## API
+
+### Health check
+
+```bash
+GET /health
+```
+
+### Retrieve messages
+
+```bash
+GET /retrieve?query=free%20entry%20win&top_k=3
+```
+
+### RAG chat
+
+```bash
+POST /chat
+Content-Type: application/json
+```
+
+Example body:
+
+```json
+{
+  "message": "Is this SMS likely spam? Free entry to win a prize.",
+  "top_k": 3
+}
+```
+
+## Local setup
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export GROQ_API_KEY="your_api_key"
+uvicorn app.main:app --reload
+```
+
+Open `http://127.0.0.1:8000/docs` to use the interactive API documentation.
