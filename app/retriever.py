@@ -1,6 +1,13 @@
+import warnings
 from typing import List, Dict, Any
 
 def naive_retriever(query: str, documents: List[Dict[str, Any]], top_k: int=5) -> List[Dict[str, Any]]:
+    warnings.warn(
+        "naive_retriever is deprecated and kept for reference/experiments only. "
+        "Use the FAISS-based retriever for semantic retrieval.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     """
         Very simple retrieval:
           - Lowercase query and document text.
