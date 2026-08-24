@@ -6,7 +6,7 @@ from groq import Groq
 _client = None
 load_dotenv()
 
-def get_groq_client() -> Groq:
+def get_groq_client() -> Groq | None:
     global _client
     if _client is None:
         api_key = os.getenv('GROQ_API_KEY')
@@ -14,6 +14,7 @@ def get_groq_client() -> Groq:
             raise ValueError("GROQ_API_KEY is missing from your .env file!")
         _client = Groq(api_key=api_key)
         return _client
+    return None
 
 def call_groq_chat(messages: list[dict], model: str = "openai/gpt-oss-20b") -> str:
     """

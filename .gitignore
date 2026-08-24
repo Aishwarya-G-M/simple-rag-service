@@ -1,18 +1,22 @@
-# Virtual environment
-.venv/
-venv/
-
-# Python cache
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
 
-# Environment files and secrets
+# Environment variables
 .env
-.env.*
 
-# IDE files
+# IDE
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# OS files
+# OS
 .DS_Store
