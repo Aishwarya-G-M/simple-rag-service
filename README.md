@@ -63,3 +63,8 @@ uvicorn app.main:app --reload
 ```
 
 Open `http://127.0.0.1:8000/docs` to use the interactive API documentation.
+
+
+## Architecture and roadmap
+
+For the broader architecture (including `secure-llm-gateway` and the planned GraphRAG service), see [docs/architecture-and-roadmap.md](docs/architecture-and-roadmap.md).
