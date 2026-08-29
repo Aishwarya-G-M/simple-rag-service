@@ -5,7 +5,7 @@ These scripts were used during the early development of the RAG service to explo
 The production logic now lives in:
 
 - `app/faiss_retriever.py` – FAISS-based semantic retriever.
-- `app/main.py` – FastAPI endpoints (`/chat`, `/retrieve-semantic`, etc.).
+- `app/main.py` – FastAPI endpoints (`/rag/query`, `/retrieve-semantic`, etc.).
 
 ## Scripts
 

@@ -10,7 +10,7 @@ This is an initial RAG prototype built with Python, FastAPI, and Groq.
 
 1. Loads an SMS spam CSV dataset into memory at service startup.
 2. Exposes `GET /retrieve`, which finds relevant messages using naive word-overlap scoring.
-3. Exposes `POST /chat`, which:
+3. Exposes `POST /rag/query`, which:
    - Retrieves the top-k matching SMS messages.
    - Adds them as context to an LLM prompt.
    - Calls Groq to generate a grounded response.
@@ -39,7 +39,7 @@ GET /retrieve?query=free%20entry%20win&top_k=3
 ### RAG chat
 
 ```bash
-POST /chat
+POST /rag/query
 Content-Type: application/json
 ```
 
