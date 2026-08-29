@@ -25,11 +25,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     print("Shutting down...")
 
-app = FastAPI(title = "Simple RAG Service", lifespan=lifespan)
+app = FastAPI(
+    title="Simple RAG Service",
+    description="Generic retrieval-augmented generation over a configured document corpus.",
+    lifespan=lifespan,
+)
 
 class ChatRequest(BaseModel):
     message: str
     top_k: int = 5
+    # optional: used only by evaluation / attack suite
+    scenario_id: str | None = None  # which test case
+    input_type: str | None = None  # "benign" | "attack"
+    attack_type: str | None = None  # e.g. "smishing", "prompt_injection"
 
 
 class ChatResponse(BaseModel):
@@ -46,7 +54,7 @@ def health():
 
 @app.get("/")
 def root():
-    return {"message": "Simple RAG Service is running."}
+    return {"message": "Simple RAG Service is running (generic RAG over the configured corpus)."}
 
 @app.get("/retrieve")
 def retrieve(
@@ -61,7 +69,7 @@ def retrieve(
         "note": "This endpoint uses the deprecated naive retriever. Use /retrieve-semantic for semantic search.",
     }
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/rag/query", response_model=ChatResponse)
 def chat(req: ChatRequest):
     # native-retriever is deprecated - it was used for learning purpose
     # retrieved = naive_retriever(req.message, DOCUMENTS, top_k=req.top_k)

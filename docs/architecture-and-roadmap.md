@@ -59,7 +59,7 @@ Both RAG services call the **same** `secure-llm-gateway`, so the LLM and securit
   - `GET /`
   - `GET /retrieve` (deprecated, naive word-overlap).
   - `POST /retrieve-semantic`
-  - `POST /chat` (RAG with semantic retrieval + LLM).
+  - `POST /rag/query` (RAG with semantic retrieval + LLM).
 - Tests for the retriever and `/retrieve-semantic` endpoint.
 
 For details on usage, see the main [`README.md`](../README.md).
@@ -73,7 +73,7 @@ We will build a new service, `graphrag-service`, that:
   - Constructs a graph over documents and entities.
   - Supports multi-hop and corpus-level queries.
 - Exposes similar endpoints:
-  - `POST /chat-graph` (GraphRAG-based RAG).
+  - `POST /rag/query-graph` (GraphRAG-based RAG).
   - Possibly `POST /retrieve-graph` for raw retrieval.
 
 Like `simple-rag-service`, it will call `secure-llm-gateway` for all LLM interactions.
@@ -142,7 +142,7 @@ with the gateway and LLM provider held constant.
 - [ ] Implement `graphrag-service`:
   - Choose a GraphRAG implementation (e.g., Microsoft GraphRAG or a custom approach).
   - Implement graph construction and retrieval.
-  - Expose `/chat-graph` (and optionally `/retrieve-graph`).
+  - Expose `/rag/query-graph` (and optionally `/retrieve-graph`).
 - [ ] Define the evaluation question set and run side-by-side comparisons.
 - [ ] Document results and trade-offs.
 
