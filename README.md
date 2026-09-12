@@ -56,7 +56,6 @@ Example body:
 
 ```bash
 python3.11 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 export GROQ_API_KEY="your_api_key"
 uvicorn app.main:app --reload
