@@ -1,0 +1,41 @@
+test_id,message,expected_label,category,urgency,prediction,confidence,correct,latency_ms,num_retrieved,avg_retrieval_distance,llm_answer,error,timestamp
+1,Congratulations! You've won a £1000 Walmart gift card. Click here to claim: bit.ly/xyz123,spam,prize_scam,high,spam,0.6,True,902.01,5,0.6008348226547241,"**Spam** – The message follows the same pattern as the labeled examples: a congratulatory claim of a prize, a directive to click a link (instead of a phone number), and a generic value (“£1000”). The context indicates that such messages are spam.",,2026-09-18T11:50:42.160043
+2,URGENT: Your account will be suspended. Verify now at secure-bank-verify.com/login,spam,phishing,high,spam,0.7,True,906.5,5,1.005963432788849,"**Spam** – This looks like a classic phishing attempt. The message uses an urgent warning (“Your account will be suspended”), a suspicious domain that is not a known bank site, and a direct link to a login page – all tactics commonly employed by fraudsters to trick recipients into providing credentials.",,2026-09-18T11:50:43.066599
+3,Win an iPhone 15! Free giveaway! Text CLAIM to 55555 now!,spam,prize_scam,high,spam,0.6,True,920.55,5,0.7925908923149109,"**Spam** – The message follows the classic pattern of promotional spam: it offers a “free” prize (an iPhone 15), uses urgency and excitement, and instructs the recipient to text a keyword (“CLAIM”) to a short code. The structure and wording match the example spam messages, so it is almost certainly a spam SMS.",,2026-09-18T11:50:43.987206
+4,Your package delivery failed. Reschedule at: fake-dhl-tracking.net/reschedule,spam,delivery_scam,medium,spam,0.6,True,922.72,5,1.1194954872131349,"**Spam.**
+
+**Reasoning:**  
+The message urges you to reschedule a delivery via the link `fake‑dhl‑tracking.net/reschedule`, which is not an official DHL domain. Legitimate delivery notices from carriers use their own secure domains (e.g., `dhl.com`, `dhltrack.com`). The tone matches the examples of known spam (""Your package delivery failed"") and the URL is suspicious, indicating a phishing attempt to steal personal information or install malware. Hence, treat it as spam.",,2026-09-18T11:50:44.909978
+5,Amazon: Suspicious login attempt. Reset password: amaz0n-security.com/reset,spam,phishing,high,spam,0.7,True,631.24,5,1.3136993169784545,"**Likely spam (phishing)** – The message pretends to be an Amazon security alert but uses a misspelled domain (amaz0n-security.com) and a short, suspicious link. This is a common tactic to trick users into giving up credentials.",,2026-09-18T11:50:45.541268
+6,"Hey, are we still on for lunch tomorrow at 1pm?",ham,personal,low,ham,0.9,True,596.96,5,0.7589089393615722,"Not spam. The message follows the same conversational pattern as the examples ([1]–[5]), which are normal, non‑spam personal reminders about meetings or lunch. The wording, timing, and context all indicate a legitimate, ordinary inquiry.",,2026-09-18T11:50:46.138283
+7,Your OTP for login is 847293. Valid for 10 minutes.,ham,transactional,medium,spam,0.8,False,1845.02,5,1.0292389869689942,"**Likely spam.**
+
+The message is a classic “fake OTP” style used by scammers:  
+* it contains only a code and a generic validity period,  
+* there is no reference to a legitimate brand or service, and  
+* the format matches the short, generic alerts often seen in the provided spam examples (e.g., promotional offers, account‑number requests).  
+
+Without any identifying context or source, it is safest to treat this as a phishing attempt.",,2026-09-18T11:50:47.983361
+8,Meeting rescheduled to 3pm today. Conference room B.,ham,work,medium,ham,0.8,True,621.94,5,0.963161826133728,"**Likely NOT spam.**  
+The context shows ordinary, human‑to‑human messages about meeting times and locations. Your statement is a straightforward update that fits the pattern of normal, internal communication, rather than the vague, unsolicited or malicious content typical of spam.",,2026-09-18T11:50:48.605367
+9,Happy birthday! Hope you have a great day!,ham,personal,low,ham,0.7,True,693.59,5,0.5963586688041687,"**Answer:** Not spam.
+
+**Reasoning:** All the provided examples are straightforward birthday greetings with no suspicious links, requests, or unusual content. The user’s message is similarly a benign birthday wish, so it fits the same pattern.",,2026-09-18T11:50:49.299079
+10,Your flight BA249 to London is on time. Gate 45.,ham,transactional,medium,ham,0.6,True,945.68,5,1.0227194905281067,"**Not spam.**  
+The message is a straightforward flight status update (time and gate). It lacks the hallmarks of spam—no request for money, no suspicious phone number, and it mirrors the benign, informational style of the non‑spam examples.",,2026-09-18T11:50:50.244981
+11,"You won! Claim your prize at winner-claim.com. Not a scam, real offer!",spam,adversarial,high,spam,0.7,True,808.67,5,0.506028926372528,"**Answer:** Spam.
+
+**Reasoning:**  
+The message follows the same pattern seen in all the supplied examples: it claims you’ve won a prize, urges you to act immediately (“claim your prize”), and directs you to an unfamiliar website. The examples labeled spam all contain unsolicited “you’ve won” messages with no verifiable source or legitimate contact details, and they often use gimmicky wording (“guaranteed,” “valid 12hrs only”). The new message matches that template and offers no evidence of authenticity, so it is almost certainly a spam/scam.",,2026-09-18T11:50:51.053801
+12,This is not spam but your bank needs you to verify: bank-secure.com,spam,adversarial,high,spam,0.6,True,1228.88,5,0.9621146440505981,"**Likely spam** – the message is a classic phishing attempt.
+
+**Why**  
+- It is a short, unsolicited SMS that asks you to “verify” by clicking a link.  
+- The domain (`bank‑secure.com`) is not a known banking site (real banks use official domains such as `.co.uk`, `.com`, etc.).  
+- The phrasing “This is not spam but your bank needs you to verify” is a common tactic used in phishing to lower suspicion.  
+- No legitimate bank would send a generic link like this without prior context or authentication steps.  
+
+Therefore, based on the examples of typical banking‑related spam messages, this SMS should be treated as spam and not trusted.",,2026-09-18T11:50:52.282752
+13,Free entry to win a premium subscription! Terms apply. No purchase necessary.,spam,promotional,medium,spam,0.6,True,920.99,5,0.9171108722686767,"**Spam**
+
+The message follows the same pattern as the examples: it advertises a free opportunity to win something (“premium subscription”), includes a promotional tagline (“No purchase necessary”), and lacks any legitimate contact information or verifiable source. This is characteristic of promotional SMS spam.",,2026-09-18T11:50:53.203788
