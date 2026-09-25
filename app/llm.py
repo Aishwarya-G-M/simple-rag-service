@@ -1,25 +1,48 @@
 from typing import List, Dict, Any
+
 from .clients.groq_client import call_groq_chat
 from .schemas import EvaluateAbstentionResponse
 
 
-def generate_answer(query: str, context_docs: List[Dict[str,Any]]) -> str:
-    """
-        Generate an answer using Groq, grounded in the retrieved context docs.
-        context_docs: list of document dicts with at least 'text' and optionally 'label'.
-    """
-    # Build context text
-    context_lines = []
-    for i, doc in enumerate(context_docs, start=1):
-        text = doc.get("text", "")
-        label = doc.get("label", "")
-        context_lines.append(f"[{i}] (label={label}) {text}")
+MAX_CONTEXT_CHARS = 16000
 
-    context_text = "\n\n".join(context_lines)
+
+def build_context(context_docs: list[dict[str, Any]]) -> str:
+    context_lines = []
+    total_chars = 0
+
+    for i, doc in enumerate(context_docs, start=1):
+        text = str(doc.get("text", ""))
+
+        line = f"[{i}] {text}"
+        remaining = MAX_CONTEXT_CHARS - total_chars
+
+        if remaining <= 0:
+            break
+
+        line = line[:remaining]
+        context_lines.append(line)
+        total_chars += len(line)
+
+    return "\n\n".join(context_lines)
+
+
+def generate_answer(
+    query: str,
+    context_docs: List[Dict[str, Any]],
+) -> str:
+    """
+    Generate an answer using Groq, grounded in the retrieved context documents.
+
+    context_docs:
+        A list of document dictionaries containing at least a "text" field.
+    """
+    context_text = build_context(context_docs)
 
     system_prompt = (
         "You are a fraud analysis assistant. "
-        "Use the provided SMS examples to reason about whether a given message is likely spam or not. "
+        "Use the provided SMS examples to reason about whether a given "
+        "message is likely spam or not. "
         "If the context is insufficient, say so clearly."
     )
 
@@ -30,24 +53,24 @@ def generate_answer(query: str, context_docs: List[Dict[str,Any]]) -> str:
     )
 
     messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
+        {
+            "role": "system",
+            "content": system_prompt,
+        },
+        {
+            "role": "user",
+            "content": user_prompt,
+        },
     ]
 
     return call_groq_chat(messages)
+
 
 def generate_abstention_response(
     query: str,
     context_docs: list[dict[str, Any]],
 ) -> EvaluateAbstentionResponse:
-    context_lines = []
-
-    for i, doc in enumerate(context_docs, start=1):
-        text = doc.get("text", "")
-        label = doc.get("label", "")
-        context_lines.append(f"[{i}] (label={label}) {text}")
-
-    context_text = "\n\n".join(context_lines)
+    context_text = build_context(context_docs)
 
     system_prompt = """
 You are a fraud analysis assistant.
@@ -74,8 +97,14 @@ Rules:
     )
 
     messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
+        {
+            "role": "system",
+            "content": system_prompt,
+        },
+        {
+            "role": "user",
+            "content": user_prompt,
+        },
     ]
 
     raw_output = call_groq_chat(messages)

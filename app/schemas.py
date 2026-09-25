@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional, Literal
 
 
@@ -17,7 +17,7 @@ class ChatResponse(BaseModel):
 
 class EvaluateAbstentionRequest(BaseModel):
     query: str
-    top_k: int = 150
+    top_k: int = Field(default=25, ge=1, le=150)
 
 class EvaluateAbstentionResponse(BaseModel):
     is_spam: bool

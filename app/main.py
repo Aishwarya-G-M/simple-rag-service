@@ -4,7 +4,7 @@ from typing import AsyncGenerator, List, Dict, Any
 from fastapi import FastAPI, Query
 from .documents import load_documents
 from .faiss_retriever import FaissRetriever
-from .llm import generate_answer, generate_abstention_response
+from .llm import generate_answer, generate_abstention_response, build_context
 from .retriever import naive_retriever
 from pydantic import BaseModel
 import time
@@ -106,6 +106,23 @@ def retrieve_semantic(req: RetrieveSemanticRequest):
 
 @app.post("/rag/evaluate")
 def evaluate_abstention(req: EvaluateAbstentionRequest):
-    top_k_context = retriever.retrieve_similar(req.query, k=req.top_k)
-    return generate_abstention_response(req.query, top_k_context)
+    top_k_context = retriever.retrieve_similar(
+        req.query,
+        k=req.top_k,
+    )
+
+    response = generate_abstention_response(
+        req.query,
+        top_k_context,
+    )
+
+    context_text = build_context(top_k_context)
+
+    return {
+        "query": req.query,
+        "requested_top_k": req.top_k,
+        "actual_retrieved": len(top_k_context),
+        "context_chars": len(context_text),
+        "response": response.model_dump(),
+    }
 
