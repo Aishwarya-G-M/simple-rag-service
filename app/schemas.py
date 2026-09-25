@@ -1,5 +1,6 @@
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from typing import List, Dict, Any, Optional, Literal
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -13,3 +14,13 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     retrieved: List[Dict[str, Any]]
+
+class EvaluateAbstentionRequest(BaseModel):
+    query: str
+    top_k: int = Field(default=25, ge=1, le=150)
+
+class EvaluateAbstentionResponse(BaseModel):
+    is_spam: bool
+    abstention_status: Literal["answer", "abstain"]
+    answer: str | None = None
+    abstention_reason: str | None = None

@@ -4,7 +4,7 @@ from typing import AsyncGenerator, List, Dict, Any
 from fastapi import FastAPI, Query
 from .documents import load_documents
 from .faiss_retriever import FaissRetriever
-from .llm import generate_answer
+from .llm import generate_answer, generate_abstention_response, build_context
 from .retriever import naive_retriever
 from pydantic import BaseModel
 import time
@@ -12,7 +12,7 @@ import time
 from metrics.metrics import RagRequestMetrics
 from metrics.logger import logger as metrics_logger
 from metrics.helper import is_safe, did_abstain, is_correct
-from .schemas import ChatResponse, ChatRequest
+from .schemas import ChatResponse, ChatRequest, EvaluateAbstentionRequest
 
 # In-memory document store (for now)
 DOCUMENTS: List[Dict[str, Any]] = []
@@ -103,3 +103,26 @@ def rag_query(req: ChatRequest):
 def retrieve_semantic(req: RetrieveSemanticRequest):
     results = retriever.retrieve_similar(req.message, k=req.k)
     return {"query": req.message, "results": results}
+
+@app.post("/rag/evaluate")
+def evaluate_abstention(req: EvaluateAbstentionRequest):
+    top_k_context = retriever.retrieve_similar(
+        req.query,
+        k=req.top_k,
+    )
+
+    response = generate_abstention_response(
+        req.query,
+        top_k_context,
+    )
+
+    context_text = build_context(top_k_context)
+
+    return {
+        "query": req.query,
+        "requested_top_k": req.top_k,
+        "actual_retrieved": len(top_k_context),
+        "context_chars": len(context_text),
+        "response": response.model_dump(),
+    }
+
