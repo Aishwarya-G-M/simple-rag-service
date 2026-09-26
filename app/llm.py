@@ -44,6 +44,8 @@ def generate_answer(
         "Use the provided SMS examples to reason about whether a given "
         "message is likely spam or not. "
         "If the context is insufficient, say so clearly."
+        "Do not use Markdown code fences."
+        "Return the JSON object directly, with no text before or after it."
     )
 
     user_prompt = (
@@ -109,4 +111,21 @@ Rules:
 
     raw_output = call_groq_chat(messages)
 
-    return EvaluateAbstentionResponse.model_validate_json(raw_output)
+    cleaned_output = clean_json_output(raw_output)
+
+    return EvaluateAbstentionResponse.model_validate_json(
+        cleaned_output
+    )
+
+def clean_json_output(raw_output: str) -> str:
+    cleaned = raw_output.strip()
+
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[len("```json"):].strip()
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[len("```"):].strip()
+
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3].strip()
+
+    return cleaned
