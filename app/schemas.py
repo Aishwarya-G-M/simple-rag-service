@@ -20,7 +20,7 @@ class EvaluateAbstentionRequest(BaseModel):
     top_k: int = Field(default=25, ge=1, le=150)
 
 class EvaluateAbstentionResponse(BaseModel):
-    is_spam: bool
+    is_spam: bool | None = None
     abstention_status: Literal["answer", "abstain"]
     answer: str | None = None
     abstention_reason: str | None = None

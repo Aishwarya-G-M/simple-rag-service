@@ -1,20 +1,34 @@
-from typing import List, Dict, Any
+from __future__ import annotations
+from pydantic import json
 
 from .clients.groq_client import call_groq_chat
 from .schemas import EvaluateAbstentionResponse
 
+import json
+import logging
+import re
+from typing import Any
+
+from pydantic import ValidationError
+
+logger = logging.getLogger(__name__)
 
 MAX_CONTEXT_CHARS = 16000
 
 
-def build_context(context_docs: list[dict[str, Any]]) -> str:
-    context_lines = []
+def build_context(
+    context_docs: list[dict[str, Any]],
+) -> str:
+    context_lines: list[str] = []
     total_chars = 0
 
-    for i, doc in enumerate(context_docs, start=1):
+    for index, doc in enumerate(
+        context_docs,
+        start=1,
+    ):
         text = str(doc.get("text", ""))
+        line = f"[{index}] {text}"
 
-        line = f"[{i}] {text}"
         remaining = MAX_CONTEXT_CHARS - total_chars
 
         if remaining <= 0:
@@ -29,29 +43,24 @@ def build_context(context_docs: list[dict[str, Any]]) -> str:
 
 def generate_answer(
     query: str,
-    context_docs: List[Dict[str, Any]],
+    context_docs: list[dict[str, Any]],
 ) -> str:
     """
-    Generate an answer using Groq, grounded in the retrieved context documents.
-
-    context_docs:
-        A list of document dictionaries containing at least a "text" field.
+    Generate a regular grounded answer.
     """
     context_text = build_context(context_docs)
 
     system_prompt = (
         "You are a fraud analysis assistant. "
-        "Use the provided SMS examples to reason about whether a given "
-        "message is likely spam or not. "
-        "If the context is insufficient, say so clearly."
-        "Do not use Markdown code fences."
-        "Return the JSON object directly, with no text before or after it."
+        "Use only the supplied SMS context. "
+        "If the context is insufficient, say so clearly. "
+        "Do not use outside knowledge."
     )
 
     user_prompt = (
         f"Context (SMS examples):\n{context_text}\n\n"
-        f"User question: {query}\n\n"
-        "Answer concisely and explain your reasoning based on the context."
+        f"User question:\n{query}\n\n"
+        "Answer concisely and ground every claim in the context."
     )
 
     messages = [
@@ -75,22 +84,41 @@ def generate_abstention_response(
     context_text = build_context(context_docs)
 
     system_prompt = """
-You are a fraud analysis assistant.
+You are a fraud-analysis assistant.
 
-Use only the supplied SMS context to answer the query.
+Use only the supplied SMS context.
 
 Rules:
-- Answer only when the context supports the answer.
+- Answer only when the supplied context supports the answer.
 - If the context is insufficient, ambiguous, or contradictory, abstain.
 - Do not guess or use outside knowledge.
-- Determine whether the query itself is spam and set is_spam accordingly.
-- Return only valid JSON with exactly these fields:
-  {
-    "is_spam": true or false,
-    "abstention_status": "answer" or "abstain",
-    "answer": "string or null",
-    "abstention_reason": "string or null"
-  }
+- Do not provide instructions that facilitate fraud, evasion, theft,
+  money laundering, or other wrongdoing.
+- Set is_spam to null when the context does not support a reliable
+  spam classification.
+- If abstention_status is "abstain", answer must be null.
+- If abstention_status is "answer", abstention_reason must be null.
+- Return only one valid JSON object.
+- Do not return Markdown.
+- Do not return a refusal sentence outside the JSON object.
+
+Return exactly this shape:
+
+{
+  "is_spam": true,
+  "abstention_status": "answer",
+  "answer": "string",
+  "abstention_reason": null
+}
+
+For abstention, use:
+
+{
+  "is_spam": null,
+  "abstention_status": "abstain",
+  "answer": null,
+  "abstention_reason": "string"
+}
 """
 
     user_prompt = (
@@ -111,21 +139,117 @@ Rules:
 
     raw_output = call_groq_chat(messages)
 
-    cleaned_output = clean_json_output(raw_output)
+    try:
+        json_text = extract_json_object(raw_output)
 
-    return EvaluateAbstentionResponse.model_validate_json(
-        cleaned_output
-    )
+        response = (
+            EvaluateAbstentionResponse.model_validate_json(
+                json_text
+            )
+        )
 
-def clean_json_output(raw_output: str) -> str:
+        validate_abstention_invariants(response)
+
+        return response
+
+    except (
+        ValueError,
+        ValidationError,
+    ) as exc:
+        logger.warning(
+            "Invalid structured abstention output: "
+            "error=%s raw_output=%r",
+            exc,
+            raw_output[:1000],
+        )
+
+        return fallback_abstention_response(
+            query=query,
+            reason=(
+                "The model did not return a valid structured "
+                "abstention response."
+            ),
+        )
+
+
+def extract_json_object(raw_output: str) -> str:
     cleaned = raw_output.strip()
 
-    if cleaned.startswith("```json"):
-        cleaned = cleaned[len("```json"):].strip()
-    elif cleaned.startswith("```"):
-        cleaned = cleaned[len("```"):].strip()
+    cleaned = re.sub(
+        r"^```(?:json)?\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
 
-    if cleaned.endswith("```"):
-        cleaned = cleaned[:-3].strip()
+    cleaned = re.sub(
+        r"\s*```$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip()
 
-    return cleaned
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError(
+            "No JSON object found in model output"
+        )
+
+    candidate = cleaned[start:end + 1]
+
+    json.loads(candidate)
+
+    return candidate
+
+
+def validate_abstention_invariants(
+    response: EvaluateAbstentionResponse,
+) -> None:
+    if response.abstention_status == "abstain":
+        if response.answer is not None:
+            raise ValueError(
+                "Abstention response must have answer=null"
+            )
+
+        if not response.abstention_reason:
+            raise ValueError(
+                "Abstention response must include a reason"
+            )
+
+    if response.abstention_status == "answer":
+        if not response.answer:
+            raise ValueError(
+                "Answer response must include answer text"
+            )
+
+        if response.abstention_reason is not None:
+            raise ValueError(
+                "Answer response must have "
+                "abstention_reason=null"
+            )
+
+
+def fallback_abstention_response(
+    query: str,
+    reason: str,
+) -> EvaluateAbstentionResponse:
+    fields = {
+        "query": query,
+        "is_spam": None,
+        "abstention_status": "abstain",
+        "answer": None,
+        "abstention_reason": reason,
+    }
+
+    try:
+        return EvaluateAbstentionResponse.model_validate(
+            fields
+        )
+    except ValidationError:
+        fields.pop("query", None)
+
+        return EvaluateAbstentionResponse.model_validate(
+            fields
+        )
